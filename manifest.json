@@ -2,10 +2,11 @@
   "name": "CasaSpese",
   "short_name": "CasaSpese",
   "description": "Gestione spese domestiche e conto corrente",
-  "start_url": "/",
+  "start_url": "/casaspese/",
+  "scope": "/casaspese/",
   "display": "standalone",
   "background_color": "#0b1118",
-  "theme_color": "#0f1923",
+  "theme_color": "#0b1118",
   "orientation": "portrait",
   "icons": [
     {
