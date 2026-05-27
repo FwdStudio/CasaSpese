@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b1118">
+  <meta name="description" content="CasaSpese - Gestione spese domestiche">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>CasaSpese</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b1118;
+      --surface: #131d27;
+      --surface2: #1a2737;
+      --surface3: #1f3045;
+      --border: rgba(255,255,255,0.07);
+      --accent: #4ade80;
+      --accent2: #22d3ee;
+      --danger: #f87171;
+      --warning: #fbbf24;
+      --purple: #a78bfa;
+      --text: #e8edf2;
+      --muted: #6b8090;
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: rgba(11,17,24,0.95);
+      backdrop-filter: blur(24px);
+      border-top: 1px solid var(--border);
+      display: flex; justify-content: space-around;
+      padding: 10px 0 max(10px, env(safe-area-inset-bottom));
+      z-index: 100;
+    }
+    .nav-btn {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      background: none; border: none; cursor: pointer;
+      color: var(--muted); font-size: 11px; font-family: 'DM Sans', sans-serif;
+      transition: color 0.2s; padding: 4px 14px;
+    }
+    .nav-btn svg { width: 22px; height: 22px; stroke-width: 1.8; }
+    .nav-btn.active { color: var(--accent); }
+
+    /* PAGES */
+    .page { display: none; padding: 20px 16px 90px; max-width: 520px; margin: 0 auto; }
+    .page.active { display: block; }
+
+    /* TYPOGRAPHY */
+    .page-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 30px; margin-bottom: 4px;
+      background: linear-gradient(135deg, #e8edf2 30%, #7aafcc);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .page-sub { color: var(--muted); font-size: 13px; margin-bottom: 22px; }
+    .section-title {
+      font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 10px; margin-top: 6px;
+    }
+
+    /* CARDS */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px; margin-bottom: 14px;
+    }
+    .card-sm { padding: 14px 16px; }
+    .card-label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+
+    /* HERO */
+    .hero {
+      background: linear-gradient(135deg, #162030 0%, #0d2339 100%);
+      border: 1px solid rgba(74,222,128,0.18);
+      border-radius: 20px; padding: 24px 22px; margin-bottom: 14px;
+      position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: ''; position: absolute; top: -50px; right: -50px;
+      width: 180px; height: 180px;
+      background: radial-gradient(circle, rgba(74,222,128,0.1) 0%, transparent 70%);
+    }
+    .hero-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+    .hero-amount { font-family: 'DM Serif Display', serif; font-size: 40px; line-height: 1; color: var(--accent); margin-bottom: 4px; }
+    .hero-amount.negative { color: var(--danger); }
+    .hero-sub { font-size: 13px; color: var(--muted); }
+
+    /* BAR */
+    .budget-bar-wrap { margin-top: 14px; }
+    .budget-bar-header { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 7px; }
+    .budget-bar-track { height: 7px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
+    .budget-bar-fill { height: 100%; border-radius: 99px; transition: width 0.7s cubic-bezier(.4,0,.2,1); }
+    .bar-green  { background: linear-gradient(90deg,#4ade80,#22d3ee); }
+    .bar-yellow { background: linear-gradient(90deg,#fbbf24,#f59e0b); }
+    .bar-red    { background: linear-gradient(90deg,#f87171,#ef4444); }
+
+    /* GRID */
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+    .stat-num { font-family: 'DM Serif Display', serif; font-size: 24px; margin-top: 4px; }
+    .green  { color: var(--accent); }
+    .red    { color: var(--danger); }
+    .blue   { color: var(--accent2); }
+    .yellow { color: var(--warning); }
+    .purple { color: var(--purple); }
+
+    /* TX ITEMS */
+    .tx-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 11px 0; border-bottom: 1px solid var(--border);
+    }
+    .tx-item:last-child { border-bottom: none; }
+    .tx-icon {
+      width: 38px; height: 38px; border-radius: 11px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px; flex-shrink: 0;
+    }
+    .tx-info { flex: 1; min-width: 0; }
+    .tx-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tx-cat  { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .tx-amount { font-size: 14px; font-weight: 600; white-space: nowrap; }
+    .tx-date { font-size: 10px; color: var(--muted); }
+    .tx-del {
+      background: rgba(248,113,113,0.1); border: none; cursor: pointer;
+      color: var(--danger); border-radius: 8px; padding: 4px 8px; font-size: 12px;
+      transition: background 0.2s; flex-shrink: 0;
+    }
+    .tx-del:hover { background: rgba(248,113,113,0.25); }
+
+    /* IMPORT ZONE */
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 36px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 14px;
+      background: var(--surface);
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: var(--accent);
+      background: rgba(74,222,128,0.04);
+    }
+    .drop-icon { font-size: 40px; margin-bottom: 12px; }
+    .drop-title { font-family: 'DM Serif Display', serif; font-size: 20px; margin-bottom: 6px; }
+    .drop-sub { font-size: 13px; color: var(--muted); line-height: 1.6; }
+    #file-input { display: none; }
+
+    /* PROGRESS */
+    .import-progress {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px; margin-bottom: 14px;
+      display: none;
+    }
+    .progress-bar-track { height: 6px; background: var(--surface2); border-radius: 99px; margin: 10px 0; overflow: hidden; }
+    .progress-bar-fill { height: 100%; background: linear-gradient(90deg,#4ade80,#22d3ee); border-radius: 99px; transition: width 0.3s; }
+
+    /* IMPORT REVIEW */
+    .review-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px; margin-bottom: 14px;
+      display: none;
+    }
+    .review-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin: 14px 0; }
+    .review-stat { text-align: center; padding: 12px 6px; background: var(--surface2); border-radius: 10px; }
+    .review-stat-num { font-family: 'DM Serif Display', serif; font-size: 22px; }
+    .review-stat-lbl { font-size: 10px; color: var(--muted); margin-top: 3px; letter-spacing: 0.05em; text-transform: uppercase; }
+
+    /* CATEGORY MAPPING */
+    .cat-map-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 0; border-bottom: 1px solid var(--border); gap: 10px;
+    }
+    .cat-map-item:last-child { border-bottom: none; }
+    .cat-map-desc { font-size: 12px; color: var(--muted); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cat-map-sel {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text); padding: 6px 10px;
+      font-family: 'DM Sans', sans-serif; font-size: 12px;
+      outline: none; min-width: 140px; -webkit-appearance: none;
+    }
+    .cat-map-sel:focus { border-color: var(--accent); }
+
+    /* FORM */
+    .form-group { margin-bottom: 16px; }
+    .form-label { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; display: block; }
+    .form-input, .form-select {
+      width: 100%; padding: 12px 15px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); color: var(--text);
+      font-family: 'DM Sans', sans-serif; font-size: 15px;
+      outline: none; transition: border-color 0.2s; -webkit-appearance: none;
+    }
+    .form-input:focus, .form-select:focus { border-color: var(--accent); }
+    .type-toggle { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 18px; }
+    .type-btn {
+      padding: 11px; border: 2px solid var(--border); border-radius: var(--radius-sm);
+      background: var(--surface2); cursor: pointer; color: var(--muted);
+      font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
+      transition: all 0.2s; text-align: center;
+    }
+    .type-btn.active-income  { border-color: var(--accent); color: var(--accent); background: rgba(74,222,128,0.08); }
+    .type-btn.active-expense { border-color: var(--danger); color: var(--danger); background: rgba(248,113,113,0.08); }
+
+    /* BUTTONS */
+    .btn {
+      width: 100%; padding: 14px; border: none; border-radius: var(--radius-sm);
+      font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600;
+      cursor: pointer; transition: opacity 0.2s; margin-bottom: 10px;
+    }
+    .btn:hover { opacity: 0.88; }
+    .btn-primary { background: linear-gradient(135deg,#4ade80,#22d3ee); color: #0b1118; }
+    .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+    .btn-danger { background: rgba(248,113,113,0.15); color: var(--danger); border: 1px solid rgba(248,113,113,0.3); }
+    .btn-sm { padding: 9px 18px; width: auto; font-size: 13px; }
+
+    /* ALERT */
+    .alert {
+      padding: 11px 15px; border-radius: var(--radius-sm);
+      margin-bottom: 14px; font-size: 13px; font-weight: 500;
+      display: flex; gap: 10px; align-items: flex-start;
+    }
+    .alert-green  { background: rgba(74,222,128,0.08);  border: 1px solid rgba(74,222,128,0.2);  color: var(--accent); }
+    .alert-red    { background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.2); color: var(--danger); }
+    .alert-yellow { background: rgba(251,191,36,0.08);  border: 1px solid rgba(251,191,36,0.2);  color: var(--warning); }
+    .alert-blue   { background: rgba(34,211,238,0.08);  border: 1px solid rgba(34,211,238,0.2);  color: var(--accent2); }
+
+    /* MONTH NAV */
+    .month-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+    .month-nav button {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text); cursor: pointer;
+      padding: 7px 14px; font-size: 18px; line-height: 1;
+    }
+    .month-nav span { font-family: 'DM Serif Display', serif; font-size: 20px; }
+
+    /* FILTER CHIPS */
+    .cat-list { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 16px; }
+    .cat-chip {
+      padding: 5px 13px; border-radius: 99px; font-size: 12px;
+      background: var(--surface2); border: 1px solid var(--border);
+      cursor: pointer; transition: all 0.15s; color: var(--muted);
+    }
+    .cat-chip.sel { background: rgba(74,222,128,0.1); border-color: var(--accent); color: var(--accent); }
+
+    /* CHART */
+    canvas { max-width: 100%; display: block; }
+
+    /* CAT BREAKDOWN BAR */
+    .breakdown-item { margin-bottom: 13px; }
+    .breakdown-header { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; }
+    .breakdown-pct { color: var(--muted); font-size: 12px; }
+
+    /* EMPTY */
+    .empty { text-align: center; padding: 36px 20px; color: var(--muted); }
+    .empty-icon { font-size: 44px; margin-bottom: 10px; }
+
+    /* BADGE */
+    .badge {
+      display: inline-flex; padding: 2px 9px; border-radius: 99px;
+      font-size: 10px; font-weight: 600; letter-spacing: 0.04em;
+    }
+    .badge-new { background: rgba(74,222,128,0.15); color: var(--accent); }
+    .badge-dup { background: rgba(251,191,36,0.15); color: var(--warning); }
+
+    /* SETTINGS */
+    .settings-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 13px 0; border-bottom: 1px solid var(--border);
+    }
+    .settings-row:last-child { border-bottom: none; }
+    .settings-label { font-size: 14px; }
+    .settings-val { color: var(--muted); font-size: 12px; }
+
+    /* SCROLL */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 99px; }
+
+    @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+    .fade-up { animation: fadeUp 0.3s ease both; }
+
+    /* TOAST */
+    #toast {
+      position: fixed; bottom: 85px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: var(--surface3); border: 1px solid var(--border);
+      border-radius: 99px; padding: 10px 20px; font-size: 13px;
+      opacity: 0; transition: all 0.3s; pointer-events: none; white-space: nowrap;
+      z-index: 200;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════ DASHBOARD ══════════════ -->
+<div class="page active" id="page-home">
+  <p class="page-title">CasaSpese</p>
+  <p class="page-sub" id="home-sub">Carica un estratto conto per iniziare</p>
+
+  <div id="budget-alert" style="display:none"></div>
+
+  <div class="hero fade-up">
+    <div class="hero-label">💳 Puoi ancora spendere</div>
+    <div class="hero-amount" id="hero-remaining">€0,00</div>
+    <div class="hero-sub" id="hero-sub">Configura il budget mensile nelle impostazioni</div>
+    <div class="budget-bar-wrap">
+      <div class="budget-bar-header">
+        <span id="bar-spent-label">Speso: €0</span>
+        <span id="bar-budget-label">Budget: €0</span>
+      </div>
+      <div class="budget-bar-track">
+        <div class="budget-bar-fill bar-green" id="budget-bar" style="width:0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card card-sm">
+      <div class="card-label">📥 Entrate mese</div>
+      <div class="stat-num green" id="stat-income">€0</div>
+    </div>
+    <div class="card card-sm">
+      <div class="card-label">📤 Spese mese</div>
+      <div class="stat-num red" id="stat-expense">€0</div>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="card card-sm">
+      <div class="card-label">💰 Saldo conto</div>
+      <div class="stat-num blue" id="stat-balance">€0</div>
+    </div>
+    <div class="card card-sm">
+      <div class="card-label">📊 Transazioni</div>
+      <div class="stat-num" id="stat-count">0</div>
+    </div>
+  </div>
+
+  <div class="section-title">Ultime operazioni</div>
+  <div class="card" id="recent-list">
+    <div class="empty"><div class="empty-icon">📂</div><div>Nessuna transazione — importa un CSV</div></div>
+  </div>
+</div>
+
+<!-- ══════════════ IMPORTA CSV ══════════════ -->
+<div class="page" id="page-import">
+  <p class="page-title">Importa</p>
+  <p class="page-sub">Carica l'estratto conto dalla banca</p>
+
+  <!-- DROP ZONE -->
+  <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+    <div class="drop-icon">📂</div>
+    <div class="drop-title">Trascina il CSV qui</div>
+    <div class="drop-sub">oppure tocca per selezionare il file<br><br>
+      Supporta: BCC / ICCREA · UniCredit · Intesa · Fineco · BancoBPM · Formato generico</div>
+  </div>
+  <input type="file" id="file-input" accept=".csv,.txt,.xls,.xlsx">
+
+  <!-- PROGRESS -->
+  <div class="import-progress" id="import-progress">
+    <div style="font-size:14px;font-weight:500" id="progress-label">Analisi in corso…</div>
+    <div class="progress-bar-track"><div class="progress-bar-fill" id="progress-bar" style="width:0%"></div></div>
+    <div style="font-size:12px;color:var(--muted)" id="progress-detail"></div>
+  </div>
+
+  <!-- REVIEW -->
+  <div class="review-box" id="review-box">
+    <div style="font-family:'DM Serif Display',serif;font-size:18px;margin-bottom:4px">Anteprima importazione</div>
+    <div style="font-size:12px;color:var(--muted)" id="review-format">Formato rilevato: —</div>
+    <div class="review-stats">
+      <div class="review-stat">
+        <div class="review-stat-num green" id="rev-new">0</div>
+        <div class="review-stat-lbl">Nuove</div>
+      </div>
+      <div class="review-stat">
+        <div class="review-stat-num yellow" id="rev-dup">0</div>
+        <div class="review-stat-lbl">Duplicate</div>
+      </div>
+      <div class="review-stat">
+        <div class="review-stat-num" id="rev-total">0</div>
+        <div class="review-stat-lbl">Totale</div>
+      </div>
+    </div>
+
+    <!-- CATEGORY MAPPING - sample of uncategorized -->
+    <div id="cat-mapping-section" style="display:none">
+      <div class="section-title" style="margin-top:8px">Verifica categorie (campione)</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px">L'AI ha assegnato automaticamente le categorie. Modifica se necessario.</div>
+      <div id="cat-mapping-list"></div>
+    </div>
+
+    <button class="btn btn-primary" id="btn-confirm-import" onclick="confirmImport()">✅ Conferma importazione</button>
+    <button class="btn btn-secondary" onclick="resetImport()">✕ Annulla</button>
+  </div>
+
+  <!-- FORMAT GUIDE -->
+  <div class="section-title">Formati supportati</div>
+  <div class="card">
+    <div class="tx-item" style="border-bottom:1px solid var(--border)">
+      <div style="font-size:22px;width:38px;text-align:center">🏦</div>
+      <div class="tx-info"><div class="tx-name">BCC / ICCREA</div><div class="tx-cat">Data;Valuta;Descrizione;Importo;Causale</div></div>
+    </div>
+    <div class="tx-item" style="border-bottom:1px solid var(--border)">
+      <div style="font-size:22px;width:38px;text-align:center">🏦</div>
+      <div class="tx-info"><div class="tx-name">UniCredit</div><div class="tx-cat">Data;Valuta;Descrizione;Euro;Caus.</div></div>
+    </div>
+    <div class="tx-item" style="border-bottom:1px solid var(--border)">
+      <div style="font-size:22px;width:38px;text-align:center">🏦</div>
+      <div class="tx-info"><div class="tx-name">Intesa Sanpaolo</div><div class="tx-cat">Data operazione;Descrizione;Importo</div></div>
+    </div>
+    <div class="tx-item" style="border-bottom:1px solid var(--border)">
+      <div style="font-size:22px;width:38px;text-align:center">🏦</div>
+      <div class="tx-info"><div class="tx-name">Fineco</div><div class="tx-cat">Data;Entrate;Uscite;Descrizione</div></div>
+    </div>
+    <div class="tx-item">
+      <div style="font-size:22px;width:38px;text-align:center">📄</div>
+      <div class="tx-info"><div class="tx-name">Formato generico</div><div class="tx-cat">Rilevamento automatico colonne</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ STORICO ══════════════ -->
+<div class="page" id="page-history">
+  <p class="page-title">Storico</p>
+  <p class="page-sub">Tutte le operazioni</p>
+  <div class="month-nav">
+    <button onclick="changeHistoryMonth(-1)">‹</button>
+    <span id="history-month-label">—</span>
+    <button onclick="changeHistoryMonth(1)">›</button>
+  </div>
+  <div class="cat-list" id="cat-filter"></div>
+  <div id="history-list"><div class="empty"><div class="empty-icon">📂</div><div>Nessuna transazione</div></div></div>
+</div>
+
+<!-- ══════════════ STATISTICHE ══════════════ -->
+<div class="page" id="page-stats">
+  <p class="page-title">Statistiche</p>
+  <p class="page-sub">Analisi automatica delle spese</p>
+  <div class="month-nav">
+    <button onclick="changeStatsMonth(-1)">‹</button>
+    <span id="stats-month-label">—</span>
+    <button onclick="changeStatsMonth(1)">›</button>
+  </div>
+
+  <div class="grid2" id="stats-kpi"></div>
+
+  <div class="card">
+    <div class="card-label">Spese per categoria</div>
+    <div style="margin-top:12px;position:relative;max-height:260px">
+      <canvas id="chart-cat"></canvas>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Andamento ultimi 6 mesi</div>
+    <div style="margin-top:12px">
+      <canvas id="chart-trend" height="200"></canvas>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Dettaglio per categoria</div>
+    <div id="stats-breakdown" style="margin-top:10px"></div>
+  </div>
+
+  <div class="card" id="stats-top-merchants" style="display:none">
+    <div class="card-label">Principali commercianti</div>
+    <div id="stats-merchants-list" style="margin-top:8px"></div>
+  </div>
+</div>
+
+<!-- ══════════════ IMPOSTAZIONI ══════════════ -->
+<div class="page" id="page-settings">
+  <p class="page-title">Impostazioni</p>
+  <p class="page-sub">Conto corrente e preferenze</p>
+
+  <div class="section-title">Conto corrente</div>
+  <div class="card">
+    <div class="form-group">
+      <label class="form-label">Saldo iniziale (€)</label>
+      <input class="form-input" id="set-balance" type="number" step="0.01" placeholder="es. 2500">
+    </div>
+    <div class="form-group" style="margin-bottom:0">
+      <label class="form-label">Budget mensile (€)</label>
+      <input class="form-input" id="set-budget" type="number" step="0.01" placeholder="es. 1500">
+    </div>
+  </div>
+
+  <div class="section-title">Account</div>
+  <div class="card">
+    <div class="form-group" style="margin-bottom:0">
+      <label class="form-label">Nome</label>
+      <input class="form-input" id="set-name" type="text" placeholder="Il tuo nome">
+    </div>
+  </div>
+
+  <button class="btn btn-primary" onclick="saveSettings()">💾 Salva impostazioni</button>
+
+  <div class="section-title">Dati</div>
+  <div class="card">
+    <div class="settings-row">
+      <div><div class="settings-label">Esporta CSV</div><div class="settings-val">Scarica tutte le transazioni</div></div>
+      <button class="btn btn-secondary btn-sm" onclick="exportCSV()">↓ CSV</button>
+    </div>
+    <div class="settings-row">
+      <div><div class="settings-label">Transazioni salvate</div><div class="settings-val" id="set-count">0 movimenti</div></div>
+      <button class="btn btn-danger btn-sm" onclick="clearAll()">🗑 Reset</button>
+    </div>
+  </div>
+  <div style="text-align:center;color:var(--muted);font-size:11px;margin-top:16px">CasaSpese v2.0 · Dati locali, mai inviati</div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <button class="nav-btn active" id="nav-home" onclick="showPage('home')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Home
+  </button>
+  <button class="nav-btn" id="nav-import" onclick="showPage('import')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    Importa
+  </button>
+  <button class="nav-btn" id="nav-history" onclick="showPage('history')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    Storico
+  </button>
+  <button class="nav-btn" id="nav-stats" onclick="showPage('stats')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    Grafici
+  </button>
+  <button class="nav-btn" id="nav-settings" onclick="showPage('settings')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+    Config
+  </button>
+</nav>
+
+<div id="toast"></div>
+<script src="app.js"></script>
+</body>
+</html>
