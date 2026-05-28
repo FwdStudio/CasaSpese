@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#f0f4f8">
-  <meta name="description" content="CasaSpese - Gestione spese domestiche">
+  <meta name="description" content="Budgetly - Gestione spese domestiche">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>CasaSpese</title>
+  <title>Budgetly</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -296,6 +296,23 @@
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 99px; }
 
+
+    /* INLINE CAT SELECT */
+    .cat-inline-sel {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
+      cursor: pointer;
+      outline: none;
+      padding: 0;
+      max-width: 160px;
+      -webkit-appearance: none;
+    }
+    .cat-inline-sel:focus { color: var(--accent); }
+    .cat-inline-sel option, .cat-inline-sel optgroup { background: var(--surface); color: var(--text); font-size: 13px; }
+    .tx-cat-wrap { margin-top: 2px; }
     @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
     .fade-up { animation: fadeUp 0.3s ease both; }
 
@@ -314,7 +331,7 @@
 
 <!-- ══════════════ DASHBOARD ══════════════ -->
 <div class="page active" id="page-home">
-  <p class="page-title">CasaSpese</p>
+  <p class="page-title">Budgetly</p>
   <p class="page-sub" id="home-sub">Carica un estratto conto per iniziare</p>
 
   <div id="budget-alert" style="display:none"></div>
@@ -507,10 +524,11 @@
 
   <div class="section-title">Account</div>
   <div class="card">
-    <div class="form-group" style="margin-bottom:0">
+    <div class="form-group">
       <label class="form-label">Nome</label>
       <input class="form-input" id="set-name" type="text" placeholder="Il tuo nome">
     </div>
+
   </div>
 
   <button class="btn btn-primary" onclick="saveSettings()">💾 Salva impostazioni</button>
@@ -526,7 +544,7 @@
       <button class="btn btn-danger btn-sm" onclick="clearAll()">🗑 Reset</button>
     </div>
   </div>
-  <div style="text-align:center;color:var(--muted);font-size:11px;margin-top:16px">CasaSpese v2.0 · Dati locali, mai inviati</div>
+  <div style="text-align:center;color:var(--muted);font-size:11px;margin-top:16px">Budgetly v2.0 · Dati locali, mai inviati</div>
 </div>
 
 <!-- NAV -->
