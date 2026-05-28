@@ -1,14 +1,20 @@
-
+{
   "name": "CasaSpese",
   "short_name": "CasaSpese",
   "description": "Gestione spese domestiche e conto corrente",
   "start_url": "/CasaSpese/",
   "scope": "/CasaSpese/",
   "display": "standalone",
-  "background_color": "#0b1118",
-  "theme_color": "#0b1118",
+  "background_color": "#f0f4f8",
+  "theme_color": "#16a34a",
   "orientation": "portrait",
   "icons": [
+    {
+      "src": "apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "icon-192.png",
       "sizes": "192x192",
