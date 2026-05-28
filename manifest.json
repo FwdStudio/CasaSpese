@@ -1,6 +1,6 @@
 {
-  "name": "CasaSpese",
-  "short_name": "CasaSpese",
+  "name": "Budgetly",
+  "short_name": "Budgetly",
   "description": "Gestione spese domestiche e conto corrente",
   "start_url": "/CasaSpese/",
   "scope": "/CasaSpese/",
@@ -28,6 +28,9 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["finance", "utilities"],
+  "categories": [
+    "finance",
+    "utilities"
+  ],
   "lang": "it"
 }
