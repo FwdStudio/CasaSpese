@@ -784,3 +784,135 @@ document.head.appendChild(cs);
 initDropZone();
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+
+/* ══════════════════════════════════════════
+   PDF PARSER — BCC Milano / RelaxBanking
+══════════════════════════════════════════ */
+
+function loadPdfJs() {
+  return new Promise((resolve) => {
+    if (window.pdfjsLib) { resolve(); return; }
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    s.onload = () => {
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      resolve();
+    };
+    document.head.appendChild(s);
+  });
+}
+
+async function parsePDF(file) {
+  await loadPdfJs();
+
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+  const transactions = [];
+  // Regex per riga BCC: data_contabile data_valuta? importo descrizione
+  // Es: "28/05/2026 25/05/2026 -43,79 Operazione POS..."
+  // oppure "28/05/2026 15.799,35 Saldo finale..."
+  const rowRe = /^(\d{2}\/\d{2}\/\d{4})\s+(?:(\d{2}\/\d{2}\/\d{4})\s+)?(-?\d{1,3}(?:\.\d{3})*,\d{2})\s+(.+)$/;
+
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+
+    // Ricostruiamo le righe raggruppando per Y (stessa riga = stesso y arrotondato)
+    const byY = {};
+    content.items.forEach(item => {
+      const y = Math.round(item.transform[5]);
+      if (!byY[y]) byY[y] = [];
+      byY[y].push(item.str);
+    });
+
+    // Ordiniamo per Y decrescente (top → bottom)
+    const lines = Object.entries(byY)
+      .sort((a, b) => b[0] - a[0])
+      .map(([, parts]) => parts.join(' ').replace(/\s+/g, ' ').trim());
+
+    // Alcune righe BCC sono spezzate su 2 righe: uniamo se la riga seguente
+    // non inizia con una data
+    const merged = [];
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (merged.length && !line.match(/^\d{2}\/\d{2}\/\d{4}/) && merged[merged.length-1].match(/^\d{2}\/\d{2}\/\d{4}/)) {
+        merged[merged.length-1] += ' ' + line;
+      } else {
+        merged.push(line);
+      }
+    }
+
+    for (const line of merged) {
+      const m = line.match(rowRe);
+      if (!m) continue;
+      const [, dateContabile, dateValuta, importoRaw, desc] = m;
+
+      // Salta righe di saldo / intestazione
+      if (/saldo (finale|iniziale|contabile|disponibile)/i.test(desc)) continue;
+      if (/data contabile|data valuta|movimenti/i.test(desc)) continue;
+
+      const amount = parseItalianNum(importoRaw);
+      if (amount === null || amount === 0) continue;
+
+      const date = parseItalianDate(dateValuta || dateContabile);
+      if (!date) continue;
+
+      // Pulizia descrizione: rimuovi numeri carta e codici lunghi
+      const cleanDesc = desc
+        .replace(/CARTA\s+\d+/gi, '')
+        .replace(/\b\d{10,}\b/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 100);
+
+      const { type, cat } = autoCategory(cleanDesc, amount);
+
+      transactions.push({
+        id: Date.now() + Math.random(),
+        date,
+        description: cleanDesc,
+        amount: Math.abs(amount),
+        type: amount >= 0 ? 'income' : 'expense',
+        cat,
+        note: '',
+        source: 'pdf-bcc'
+      });
+    }
+  }
+
+  return transactions;
+}
+
+/* ── Estendi handleFile per supportare PDF ── */
+const _origHandleFile = handleFile;
+window.handleFile = async function(file) {
+  if (file.name.toLowerCase().endsWith('.pdf')) {
+    setProgress(true, 'Lettura PDF BCC…', 15);
+    try {
+      setProgress(true, 'Estrazione testo…', 35);
+      await sleep(100);
+      const rows = await parsePDF(file);
+      setProgress(true, `Categorizzazione ${rows.length} movimenti…`, 65);
+      await sleep(150);
+
+      const existing = loadTxs();
+      let dupCount = 0;
+      const newRows = rows.filter(r => {
+        if (isDuplicate(r, existing)) { dupCount++; return false; }
+        return true;
+      });
+
+      setProgress(false);
+      pendingImport = newRows;
+      showReview(newRows, dupCount, rows.length, 'BCC Milano (PDF RelaxBanking)');
+    } catch(err) {
+      setProgress(false);
+      toast('❌ Errore PDF: ' + err);
+      console.error(err);
+    }
+  } else {
+    return _origHandleFile(file);
+  }
+};
